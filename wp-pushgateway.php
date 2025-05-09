@@ -38,12 +38,13 @@ function wp_pushgateway () {
 
   if ($latest_query->have_posts()) {
     $latest_query->the_post();
-    _do_post_pushgateway("", "wp_latest_publish_time",  get_the_date('U'));
+    _do_post_pushgateway("wp_latest_publish_time",  get_the_date('U'));
     wp_reset_postdata();
   }
 
   if (function_exists("\pll_languages_list")) {
     $languages = \pll_languages_list(['fields' => 'slug']);
+    $body = "";
     foreach ($languages as $lang) {
       foreach (["page", "post"] as $post_type) {
           $query = new \WP_Query([
@@ -54,22 +55,24 @@ function wp_pushgateway () {
             'fields'         => 'ids'
           ]);
 
-          _do_post_pushgateway(
-            "post_type/$post_type/language/$lang",
-            "wp_page_count", $query->post_count);
+          $count = $query->post_count;
+          $body .= "wp_page_count{post_type=\"$post_type\",language=\"$lang\"} $count\n";
           wp_reset_postdata();
       }
     }
+
+    _do_post_pushgateway($body);
   }
 }
 
-function _do_post_pushgateway ($uri, $metric_name, $metric_value) {
-  if ($uri !== "" && (! str_ends_with($uri, "/"))) {
-    $uri = "$uri/";
+function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
+  if ($metric_value === NULL) {
+    $body = $metric_name_or_body;
+  } else {
+    $body = "$metric_name_or_body $metric_value\n";
   }
-  $body = "$metric_name $metric_value\n";
   $url = apply_filters("wp_pushgateway_base_url", "http://pushgateway:9091") .
-    "/job/wp_cron/" . $uri . "wp/" . _wordpress_site_name();
+    "/metrics/job/wp_cron/wp/" . _wordpress_site_name();
   echo("POST $url\n-----\n" . $body . "------\n");  // XXX
   // TODO: actually perform that POST query with that `$body`.
 }
