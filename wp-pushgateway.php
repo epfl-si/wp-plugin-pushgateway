@@ -12,18 +12,18 @@ namespace WP_Pushgateway;
 /**
  * wp_pushgateway_cron: the wp-cron hook for the wp-pushgateway plugin
  */
-add_action("wp_pushgateway_cron", '\WP_Pushgateway\wp_pushgateway');
+add_action("wp_pushgateway", '\WP_Pushgateway\wp_pushgateway');
 
 register_activation_hook(__FILE__, function() {
-  if (! wp_next_scheduled("wp_pushgateway_cron")) {
-    wp_schedule_event(time(), 'hourly', "wp_pushgateway_cron");
+  if (! wp_next_scheduled("wp_pushgateway")) {
+    wp_schedule_event(time(), 'hourly', "wp_pushgateway");
   }
 });
 
 
 register_deactivation_hook(__FILE__, function() {
-  while ($timestamp = wp_next_scheduled("wp_pushgateway_cron")) {
-    wp_unschedule_event($timestamp, "wp_pushgateway_cron");
+  while ($timestamp = wp_next_scheduled("wp_pushgateway")) {
+    wp_unschedule_event($timestamp, "wp_pushgateway");
   }
 });
 
