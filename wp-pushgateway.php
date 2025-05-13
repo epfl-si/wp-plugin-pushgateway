@@ -69,6 +69,9 @@ function wp_pushgateway () {
   }
 }
 
+class CurlPostError extends \Exception {
+}
+
 function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
   if ($metric_value === NULL) {
     $body = $metric_name_or_body;
@@ -77,8 +80,22 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
   }
   $url = apply_filters("wp_pushgateway_base_url", "http://pushgateway:9091") .
     "/metrics/job/wp_cron/wp/" . _wordpress_site_name();
-  echo("POST $url\n-----\n" . $body . "------\n");  // XXX
-  // TODO: actually perform that POST query with that `$body`.
+
+  $ch = curl_init($url);
+  try {
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+      'Content-Type: text/plain'
+    ]);  
+
+    $response = curl_exec($ch);
+    if (curl_errno($ch)) {
+      throw new CurlPostError(curl_error($ch));
+    }
+  } finally {
+    curl_close($ch);
+  }
 }
 
 /**
