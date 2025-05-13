@@ -16,6 +16,8 @@ add_action("wp_pushgateway", '\WP_Pushgateway\wp_pushgateway');
 
 register_activation_hook(__FILE__, function() {
   if (! wp_next_scheduled("wp_pushgateway")) {
+    // In practice, we always take that branch. The “if” clause is there to
+    // work around brokenness, e.g. if plugin deactivation failed part-way.
     wp_schedule_event(time(), 'hourly', "wp_pushgateway");
   }
 });
@@ -23,6 +25,8 @@ register_activation_hook(__FILE__, function() {
 
 register_deactivation_hook(__FILE__, function() {
   while ($timestamp = wp_next_scheduled("wp_pushgateway")) {
+    // Likewise, in practice we shouldn't have to go through this
+    // “while” loop more than once.
     wp_unschedule_event($timestamp, "wp_pushgateway");
   }
 });
