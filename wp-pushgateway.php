@@ -79,7 +79,7 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
     $body = "$metric_name_or_body $metric_value\n";
   }
   $url = apply_filters("wp_pushgateway_base_url", "http://pushgateway:9091") .
-    "/metrics/job/wp_cron/wp/" . _wordpress_site_name();
+    "/metrics/job/wp_cron/url/" . _wordpress_site_url();
 
   $ch = curl_init($url);
   try {
@@ -87,7 +87,7 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
       'Content-Type: text/plain'
-    ]);  
+    ]);
 
     $response = curl_exec($ch);
     if (curl_errno($ch)) {
@@ -101,11 +101,8 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
 /**
  * Returns the value to set as the `wp` Prometheus label in the pushgateway
  */
-function _wordpress_site_name () {
-  $sluggy_site_name = preg_replace('#^https?://#', '', strtolower(site_url()));
-  $sluggy_site_name = preg_replace('#/#', '_', $sluggy_site_name);
-
-  return apply_filters("wp_pushgateway_wp_label", $sluggy_site_name);
+function _wordpress_site_url () {
+  return apply_filters("wp_pushgateway_wp_label", site_url());
 }
 
 // People can then say
