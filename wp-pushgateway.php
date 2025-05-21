@@ -78,8 +78,25 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
   } else {
     $body = "$metric_name_or_body $metric_value\n";
   }
-  $url = apply_filters("wp_pushgateway_base_url", "http://pushgateway:9091") .
-    "/metrics/job/wp_cron/url/" . _wordpress_site_url();
+
+  /**
+   * Filters the keys and values to use for the pushgateway metrics
+   * for this site, as part of the POST URL.
+   */
+  $wp_pushgateway_wp_labels = apply_filters(
+    "wp_pushgateway_wp_labels",
+    array("url", sanitize_title(preg_replace('|https?://|', '', site_url()))));
+
+  /**
+   * Filters the base URL of the pushgateway.
+   */
+  $url_base = apply_filters(
+    "wp_pushgateway_base_url",
+    "http://pushgateway:9091");
+
+  $url = sprintf("%s/metrics/job/wp_cron/%s",
+                 $url_base,
+                 implode("/", $wp_pushgateway_wp_labels));
 
   $ch = curl_init($url);
   try {
@@ -97,14 +114,3 @@ function _do_post_pushgateway ($metric_name_or_body, $metric_value=NULL) {
     curl_close($ch);
   }
 }
-
-/**
- * Returns the value to set as the `wp` Prometheus label in the pushgateway
- */
-function _wordpress_site_url () {
-  return apply_filters("wp_pushgateway_wp_label", site_url());
-}
-
-// People can then say
-//
-//  add_filter("wp_pushgateway_wp_label", function() { return $my_prometheus_site_name; });
